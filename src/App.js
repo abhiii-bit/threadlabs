@@ -66,11 +66,73 @@ const presets = [
   "Contemporary kurta jacket with temple borders",
 ];
 
+const tailorImages = [
+  "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=900&q=85",
+  "https://images.unsplash.com/photo-1606800052052-a08af7148866?auto=format&fit=crop&w=900&q=85",
+  "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=900&q=85",
+];
+
+function TailorWorkspace({ onSwitchRole }) {
+  const [search, setSearch] = useState("");
+  const orders = [
+    { id: "TL-1048", customer: "Anika Rao", garment: "Kanjeevaram sari set", status: "New brief", date: "Today", image: tailorImages[0] },
+    { id: "TL-1042", customer: "Meera Shah", garment: "Lotus zari lehenga", status: "Awaiting quote", date: "Yesterday", image: tailorImages[1] },
+    { id: "TL-1037", customer: "Ishita Menon", garment: "Indigo handloom co-ord", status: "Fitting booked", date: "18 Sep", image: tailorImages[2] },
+  ];
+  const visibleOrders = orders.filter((order) =>
+    `${order.id} ${order.customer} ${order.garment} ${order.status}`
+      .toLowerCase()
+      .includes(search.toLowerCase())
+  );
+
+  return (
+    <main className="tailor-workspace">
+      <header className="tailor-workspace-header">
+        <div>
+          <span className="eyebrow">THREADLABS / TAILOR DESK</span>
+          <h1>Find the next<br /><em>beautiful brief.</em></h1>
+          <p>Review customer concepts, confirm materials, and move each garment from screen to fitting.</p>
+        </div>
+        <button type="button" className="tailor-switch-button" onClick={onSwitchRole}>SWITCH ROLE</button>
+      </header>
+
+      <section className="tailor-workspace-toolbar">
+        <div><span>ORDERS / 03</span><strong>Customer briefs</strong></div>
+        <label>
+          <span>SEARCH ORDERS</span>
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Name, order ID, garment..." />
+        </label>
+      </section>
+
+      <section className="tailor-order-grid">
+        {visibleOrders.map((order) => (
+          <article className="tailor-order-card" key={order.id}>
+            <img src={order.image} alt="Indian textile garment reference" />
+            <div className="tailor-order-content">
+              <div className="tailor-order-meta"><span>{order.id}</span><span>{order.date}</span></div>
+              <h2>{order.garment}</h2>
+              <p>{order.customer}</p>
+              <div className="tailor-order-footer"><span className="order-status">{order.status}</span><button type="button">OPEN BRIEF →</button></div>
+            </div>
+          </article>
+        ))}
+      </section>
+
+      {visibleOrders.length === 0 && <div className="tailor-no-orders">No order briefs match that search.</div>}
+    </main>
+  );
+}
+
 /* ======================================================= */
 /* App                                                     */
 /* ======================================================= */
 
 function App() {
+  const [role, setRole] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showRoleGate, setShowRoleGate] = useState(true);
+  const [authRole, setAuthRole] = useState("");
+  const [authEmail, setAuthEmail] = useState("");
   const [prompt, setPrompt] = useState("");
   const [language, setLanguage] = useState("en-IN");
 
@@ -165,6 +227,17 @@ function App() {
 
   const [canUseSpeech, setCanUseSpeech] =
     useState(true);
+
+  const chooseRole = (nextRole) => {
+    setAuthRole(nextRole);
+  };
+
+  const completeSignIn = () => {
+    setRole(authRole);
+    setIsAuthenticated(true);
+    setShowRoleGate(false);
+    setAuthRole("");
+  };
 
   /* ===================================================== */
   /* Cursor                                                */
@@ -1116,7 +1189,14 @@ Please confirm final consumption, pattern adjustments, fabric width, and quote a
         className="custom-cursor"
       />
 
-      {showResultPage ? (
+      {isAuthenticated && role === "tailor" ? (
+        <TailorWorkspace
+          onSwitchRole={() => {
+            setIsAuthenticated(false);
+            setShowRoleGate(true);
+          }}
+        />
+      ) : showResultPage ? (
         <DesignResultPage
           prompt={prompt}
           generatedImage={generatedImage}
@@ -2315,6 +2395,49 @@ Please confirm final consumption, pattern adjustments, fabric width, and quote a
         </footer>
       </main>
       </div>
+      )}
+
+      {showRoleGate && (
+        <div className="role-gate" role="dialog" aria-modal="true" aria-labelledby="role-gate-title">
+          {!authRole ? (
+            <div className="role-gate-panel">
+              <div className="role-gate-copy">
+                <span className="eyebrow">THREADLABS / WELCOME</span>
+                <h1 id="role-gate-title">Who are you<br /><em>making for?</em></h1>
+                <p>Choose your path into the atelier. Your workspace will be shaped around the way you make.</p>
+              </div>
+              <div className="role-choice-grid">
+                <button type="button" className="role-choice customer-choice" onClick={() => chooseRole("customer")}>
+                  <img src={inspirationImages[0].src} alt="Traditional Indian sari fashion" />
+                  <span>01 / CUSTOMER</span>
+                  <strong>Design your garment <b>↗</b></strong>
+                  <small>Imagine, generate, measure, and send your brief to a tailor.</small>
+                </button>
+                <button type="button" className="role-choice tailor-choice" onClick={() => chooseRole("tailor")}>
+                  <img src={tailorImages[1]} alt="Indian textile craft and tailoring" />
+                  <span>02 / TAILOR</span>
+                  <strong>Find customer orders <b>↗</b></strong>
+                  <small>Search new design briefs, review measurements, and manage fittings.</small>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="auth-panel">
+              <button type="button" className="auth-back" onClick={() => setAuthRole("")}>← CHOOSE ANOTHER ROLE</button>
+              <span className="eyebrow">THREADLABS / {authRole.toUpperCase()}</span>
+              <h1>Enter the<br /><em>atelier.</em></h1>
+              <p>Sign in to save your briefs, measurements, and order history.</p>
+              <button type="button" className="google-button" onClick={completeSignIn}>
+                <span className="google-mark">G</span>
+                Continue with Google
+              </button>
+              <div className="auth-divider"><span>or use email</span></div>
+              <input className="auth-email" type="email" value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} placeholder="you@example.com" aria-label="Email address" />
+              <button type="button" className="auth-email-button" onClick={completeSignIn} disabled={!authEmail.trim()}>Continue with email →</button>
+              <small className="auth-note">Google OAuth credentials can be connected in Render when the production identity provider is configured.</small>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

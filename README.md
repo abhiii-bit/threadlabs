@@ -27,6 +27,8 @@ The server handles both text-to-image generation and reference-image editing.
 
 Before image generation, the studio opens a tailor-planning modal. Users can enter body measurements, choose a garment and fabric, and receive a planning estimate for fabric meters, lining, trims, labor, and total INR cost. The estimate can be copied into a tailor brief or opened in the user's email client. Final consumption and pricing must be confirmed by the tailor after a fit review.
 
+The app now opens with a Customer/Tailor role gate. Customers enter the design studio; tailors enter the order-search desk. The current Google button is the sign-in entry UI and local session handoff. Production Google authentication requires a Google Identity Services Client ID plus server-side token verification before treating it as a real authenticated account.
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
