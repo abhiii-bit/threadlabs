@@ -4,6 +4,7 @@ import React, {
   useRef,
   useState,
 } from "react";
+import anime from "animejs/lib/anime.es.js";
 
 import {
   generateDesign,
@@ -347,6 +348,108 @@ function App() {
       document.documentElement.style.removeProperty(
         "--scroll-progress"
       );
+    };
+  }, []);
+
+  /* ===================================================== */
+  /* Anime.js motion                                       */
+  /* ===================================================== */
+
+  useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return undefined;
+    }
+
+    const navigation = document.querySelector(".navigation");
+    const heroElements = document.querySelectorAll(
+      ".hero-copy, .hero-side, .hero-gallery"
+    );
+    const revealElements = document.querySelectorAll(
+      "[data-reveal]:not(.hero-copy):not(.hero-side):not(.hero-gallery)"
+    );
+    const heroGallery = document.querySelector(".hero-gallery");
+
+    const introTimeline = anime.timeline({
+      easing: "easeOutExpo",
+      autoplay: true,
+    });
+
+    introTimeline
+      .add({
+        targets: navigation,
+        opacity: [0, 1],
+        translateY: [-18, 0],
+        duration: 900,
+      })
+      .add({
+        targets: heroElements,
+        opacity: [0, 1],
+        translateY: [34, 0],
+        scale: [0.985, 1],
+        delay: anime.stagger(110),
+        duration: 1100,
+      }, "-=560");
+
+    const revealObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) {
+            return;
+          }
+
+          anime({
+            targets: entry.target,
+            opacity: [0, 1],
+            translateY: [42, 0],
+            scale: [0.985, 1],
+            duration: 900,
+            easing: "easeOutExpo",
+          });
+
+          revealObserver.unobserve(entry.target);
+        });
+      },
+      { threshold: 0.16 }
+    );
+
+    revealElements.forEach((element) => revealObserver.observe(element));
+
+    const handlePointerMove = (event) => {
+      if (!heroGallery || window.innerWidth < 800) {
+        return;
+      }
+
+      const x = event.clientX / window.innerWidth - 0.5;
+      const y = event.clientY / window.innerHeight - 0.5;
+
+      anime({
+        targets: heroGallery,
+        translateX: x * 10,
+        translateY: y * 8,
+        duration: 900,
+        easing: "easeOutQuad",
+      });
+    };
+
+    const resetGallery = () => {
+      anime({
+        targets: heroGallery,
+        translateX: 0,
+        translateY: 0,
+        duration: 700,
+        easing: "easeOutExpo",
+      });
+    };
+
+    window.addEventListener("mousemove", handlePointerMove, { passive: true });
+    window.addEventListener("blur", resetGallery);
+
+    return () => {
+      introTimeline.pause();
+      revealObserver.disconnect();
+      anime.remove([navigation, ...heroElements, ...revealElements]);
+      window.removeEventListener("mousemove", handlePointerMove);
+      window.removeEventListener("blur", resetGallery);
     };
   }, []);
 
