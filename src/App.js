@@ -15,7 +15,6 @@ import {
   generateDesign,
   generateTryOn,
   editReferenceImage,
-  isHuggingFaceConfigured,
 } from "./gemini";
 import DesignResultPage from "./DesignResultPage";
 
@@ -143,6 +142,7 @@ function App() {
   });
   const [tailorEmail, setTailorEmail] = useState("");
   const [briefCopied, setBriefCopied] = useState(false);
+  const [showTailorModal, setShowTailorModal] = useState(false);
 
   const [brushSize, setBrushSize] =
     useState(8);
@@ -834,9 +834,14 @@ function App() {
   };
 
   const generateFashionDesign =
-    async () => {
+    async ({ skipTailor = false } = {}) => {
       const trimmedPrompt =
         prompt.trim();
+
+      if (!skipTailor) {
+        setShowTailorModal(true);
+        return;
+      }
 
       if (
         !trimmedPrompt &&
@@ -856,6 +861,11 @@ function App() {
 
         return;
       }
+
+      const promptWithTailorBrief = `${trimmedPrompt || "Use the uploaded reference image as the garment basis."}
+
+TAILOR PLANNING CONTEXT:
+${tailorBrief}`;
 
       setIsGenerating(true);
       setShowResultPage(true);
@@ -883,7 +893,7 @@ function App() {
 
         const result =
           await generateDesign(
-            trimmedPrompt,
+            promptWithTailorBrief,
             referenceResult ||
               referenceImage ||
               null
@@ -1154,10 +1164,6 @@ Please confirm final consumption, pattern adjustments, fabric width, and quote a
             Designs
           </a>
 
-          <a href="#tailor">
-            Tailor plan
-          </a>
-
           <a href="#tryon">
             Try On
           </a>
@@ -1288,9 +1294,7 @@ Please confirm final consumption, pattern adjustments, fabric width, and quote a
               </span>
 
               <span>
-                {isHuggingFaceConfigured()
-                  ? "OPENAI CONNECTED"
-                  : "API KEY REQUIRED"}
+                OPENAI SERVER ROUTE
               </span>
             </div>
 
@@ -1935,22 +1939,33 @@ Please confirm final consumption, pattern adjustments, fabric width, and quote a
         {/* TAILOR PLAN                                      */}
         {/* ================================================= */}
 
+        {showTailorModal && (
         <section
           id="tailor"
-          className="tailor-section"
+          className="tailor-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="tailor-modal-title"
         >
           <div
             className="section-heading"
             data-reveal
           >
+            <button
+              type="button"
+              className="tailor-modal-close"
+              onClick={() => setShowTailorModal(false)}
+            >
+              CLOSE ×
+            </button>
             <span>
-              06 — TAILOR PLAN
+              BEFORE WE GENERATE
             </span>
 
-            <h2>
+            <h2 id="tailor-modal-title">
               Make it
               <br />
-              measurable.
+              wearable.
             </h2>
 
             <p>
@@ -2083,6 +2098,16 @@ Please confirm final consumption, pattern adjustments, fabric width, and quote a
                 <button type="button" className="secondary-button" onClick={emailTailorBrief}>
                   EMAIL TAILOR →
                 </button>
+                <button
+                  type="button"
+                  className="generate-button compact"
+                  onClick={() => {
+                    setShowTailorModal(false);
+                    generateFashionDesign({ skipTailor: true });
+                  }}
+                >
+                  GENERATE WITH THIS BRIEF →
+                </button>
               </div>
 
               <p className="estimate-disclaimer">
@@ -2091,6 +2116,7 @@ Please confirm final consumption, pattern adjustments, fabric width, and quote a
             </aside>
           </div>
         </section>
+        )}
 
         {/* ================================================= */}
         {/* TRY ON                                           */}

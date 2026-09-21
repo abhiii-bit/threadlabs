@@ -12,6 +12,8 @@ OPENAI_API_KEY=sk_your_key_here
 
 Keep the key server-side. The React browser bundle calls `/api/images`; it never receives the OpenAI key.
 
+After adding the key locally, restart the Node server with `npm run start:server`. Never use the `REACT_APP_` prefix for this key.
+
 ## Deploy to Render
 
 This repository includes a `render.yaml` Blueprint for a Render Node web service.
@@ -23,7 +25,7 @@ This repository includes a `render.yaml` Blueprint for a Render Node web service
 
 The server handles both text-to-image generation and reference-image editing.
 
-The studio also includes a Tailor Plan worksheet. Users can enter body measurements, choose a garment and fabric, and receive a planning estimate for fabric meters, lining, trims, labor, and total INR cost. The estimate can be copied into a tailor brief or opened in the user's email client. Final consumption and pricing must be confirmed by the tailor after a fit review.
+Before image generation, the studio opens a tailor-planning modal. Users can enter body measurements, choose a garment and fabric, and receive a planning estimate for fabric meters, lining, trims, labor, and total INR cost. The estimate can be copied into a tailor brief or opened in the user's email client. Final consumption and pricing must be confirmed by the tailor after a fit review.
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
