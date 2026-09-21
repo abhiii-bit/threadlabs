@@ -1,29 +1,27 @@
 # Getting Started with Create React App
 
-## Hugging Face image generation
+## OpenAI image generation
 
-ThreadLabs uses open-weight image models through the Hugging Face Inference API.
+ThreadLabs uses OpenAI `gpt-image-1` through a server-side API route.
 
-Create a `.env` file in the project root for local development and add:
+For local server testing, create a `.env` file in the project root and add:
 
 ```env
-REACT_APP_HUGGINGFACE_API_TOKEN=hf_your_token_here
-REACT_APP_HUGGINGFACE_IMAGE_MODEL=stabilityai/stable-diffusion-3-medium-diffusers
-REACT_APP_HUGGINGFACE_IMAGE_TO_IMAGE_MODEL=black-forest-labs/FLUX.1-Kontext-dev
+OPENAI_API_KEY=sk_your_key_here
 ```
 
-Restart `npm start` after changing environment variables. The token is used by the browser in this demo, so use a restricted token and proxy the request through a server before deploying publicly.
+Keep the key server-side. The React browser bundle calls `/api/images`; it never receives the OpenAI key.
 
 ## Deploy to Render
 
-This repository includes a `render.yaml` Blueprint for a Render Static Site.
+This repository includes a `render.yaml` Blueprint for a Render Node web service.
 
 1. Push the repository to GitHub.
 2. In Render, choose **New > Blueprint** and select the repository.
-3. Set `REACT_APP_HUGGINGFACE_API_TOKEN` in the Render environment variables.
-4. Deploy. Render will run `npm ci && npm run build` and publish the `build` directory.
+3. Set `OPENAI_API_KEY` in the Render environment variables.
+4. Deploy. Render will run `npm ci && npm run build`, then start `node server.js`.
 
-The image model variables are already configured in `render.yaml` and can be overridden in Render if needed. Because the Hugging Face token is exposed to the browser by this frontend build, use a restricted token and consider adding a server-side proxy before a public launch.
+The server handles both text-to-image generation and reference-image editing.
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
@@ -69,6 +67,8 @@ You don't have to ever use `eject`. The curated feature set is suitable for smal
 You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
 
 To learn React, check out the [React documentation](https://reactjs.org/).
+
+For local development, run `npm run start:server` in one terminal with `OPENAI_API_KEY` set, then run `npm start` in another terminal.
 
 ### Code Splitting
 

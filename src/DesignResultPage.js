@@ -12,6 +12,7 @@ function DesignResultPage({
   generatedImage,
   isGenerating,
   generationStep,
+  generationError,
   onBack,
   onGenerateAgain,
 }) {
@@ -74,7 +75,7 @@ function DesignResultPage({
           <span>IMAGE GENERATION</span>
           <strong>{progress}%</strong>
           <div className="result-progress-track"><div style={{ width: `${progress}%` }} /></div>
-          <small>{isGenerating ? "Rendering garment, material and detail views..." : generatedImage ? "Fashion board rendered and ready for refinement." : "Waiting for the first render."}</small>
+          <small>{isGenerating ? "Rendering garment, material and detail views..." : generatedImage ? "Fashion board rendered and ready for refinement." : generationError ? "Generation stopped. Check the error below." : "Waiting for the first render."}</small>
         </div>
       </section>
 
@@ -88,6 +89,12 @@ function DesignResultPage({
             </div>
           ) : generatedImage ? (
             <img src={generatedImage} alt="Generated ThreadLabs fashion design" />
+          ) : generationError ? (
+            <div className="result-image-error">
+              <strong>IMAGE GENERATION STOPPED</strong>
+              <p>{generationError}</p>
+              <button type="button" onClick={onBack}>RETURN TO STUDIO</button>
+            </div>
           ) : (
             <div className="result-image-empty">Your generated image will appear here.</div>
           )}

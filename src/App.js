@@ -1101,6 +1101,7 @@ function App() {
           generatedImage={generatedImage}
           isGenerating={isGenerating}
           generationStep={generationStep}
+          generationError={generationError}
           onBack={() => setShowResultPage(false)}
           onGenerateAgain={generateFashionDesign}
         />
@@ -1273,7 +1274,7 @@ function App() {
 
               <span>
                 {isHuggingFaceConfigured()
-                  ? "HUGGING FACE CONNECTED"
+                  ? "OPENAI CONNECTED"
                   : "API KEY REQUIRED"}
               </span>
             </div>

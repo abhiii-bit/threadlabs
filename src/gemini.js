@@ -1,23 +1,3 @@
-import { InferenceClient } from "@huggingface/inference";
-
-const API_TOKEN = process.env.REACT_APP_HUGGINGFACE_API_TOKEN;
-const IMAGE_MODEL =
-  process.env.REACT_APP_HUGGINGFACE_IMAGE_MODEL ||
-  "stabilityai/stable-diffusion-3-medium-diffusers";
-const IMAGE_TO_IMAGE_MODEL =
-  process.env.REACT_APP_HUGGINGFACE_IMAGE_TO_IMAGE_MODEL ||
-  "black-forest-labs/FLUX.1-Kontext-dev";
-
-const hf = API_TOKEN
-  ? new InferenceClient(API_TOKEN)
-  : null;
-
-if (!API_TOKEN) {
-  console.warn(
-    "ThreadLabs: REACT_APP_HUGGINGFACE_API_TOKEN is missing. Add it to your .env file."
-  );
-}
-
 /*
   This is the visual system we want EVERY ThreadLabs generation
   to follow.
@@ -179,44 +159,6 @@ Do not make unrelated creative decisions that change the garment.
 /* Helpers                                                 */
 /* ------------------------------------------------------- */
 
-function ensureAI() {
-  if (!API_TOKEN) {
-    throw new Error(
-      "Hugging Face API token is missing. Add REACT_APP_HUGGINGFACE_API_TOKEN to your .env file and restart the React server."
-    );
-  }
-}
-
-function normalizeError(error) {
-  if (!error) {
-    return "Unknown Hugging Face error.";
-  }
-
-  if (typeof error === "string") {
-    return error;
-  }
-
-  const status =
-    error?.status ||
-    error?.response?.status ||
-    error?.code;
-
-  const message =
-    error?.message ||
-    error?.response?.data?.error?.message ||
-    JSON.stringify(error);
-
-  return status
-    ? `${status}: ${message}`
-    : message;
-}
-
-function toUserFacingImageError(error) {
-  return new Error(
-    `Image generation failed through Hugging Face. ${normalizeError(error)}`
-  );
-}
-
 async function makeTryOnReference(personImage, designImage) {
   const [person, design] = await Promise.all(
     [personImage, designImage].map((source) =>
@@ -270,60 +212,48 @@ async function makeTryOnReference(personImage, designImage) {
 }
 
 /* ------------------------------------------------------- */
-/* Hugging Face image generation                           */
+/* OpenAI image generation                                 */
 /* ------------------------------------------------------- */
+
+async function blobToDataUrl(blob) {
+  if (typeof blob === "string") {
+    return blob;
+  }
+
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
 
 async function requestImage({
   prompt,
   referenceImage = null,
   aspectRatio = "4:3",
 }) {
-  ensureAI();
-
-  const width = aspectRatio === "4:3" ? 1024 : 832;
-  const height = aspectRatio === "4:3" ? 768 : 1216;
-  const negativePrompt =
-    "low resolution, blurry, soft focus, pixelated, jpeg artifacts, distorted anatomy, extra fingers, malformed hands, duplicate person, asymmetrical face, plastic skin, bad garment fit, warped seams, melted fabric, muddy details, tiny text, illegible labels, fake words, random letters, overlapping panels, cramped layout, low contrast, washed out typography, watermark, logo, cluttered collage";
-
-  const blob = referenceImage
-    ? await hf.imageToImage({
-        model: IMAGE_TO_IMAGE_MODEL,
-        inputs:
-          referenceImage instanceof Blob
-            ? referenceImage
-            : await fetch(referenceImage).then((result) =>
-                result.blob()
-              ),
-        parameters: {
-          prompt,
-          negative_prompt: negativePrompt,
-          guidance_scale: 7.5,
-          num_inference_steps: 30,
-          target_size: { width, height },
-        },
-      })
-    : await hf.textToImage({
-        model: IMAGE_MODEL,
-        inputs: prompt,
-        parameters: {
-          width,
-          height,
-          negative_prompt: negativePrompt,
-          guidance_scale: 7.5,
-          num_inference_steps: 30,
-        },
-      });
-
-  const image = await new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
+  const response = await fetch("/api/images", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      prompt,
+      referenceImage: referenceImage
+        ? await blobToDataUrl(referenceImage)
+        : null,
+      aspectRatio,
+    }),
   });
 
+  const payload = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(payload.error || `OpenAI request failed (${response.status}).`);
+  }
+
   return {
-    image,
-    model: IMAGE_MODEL,
+    image: payload.image,
+    model: "gpt-image-1",
   };
 }
 
@@ -339,11 +269,8 @@ async function generateWithModel({
       aspectRatio,
     });
   } catch (error) {
-    console.error(
-      "ThreadLabs Hugging Face image generation failed:",
-      error
-    );
-    throw toUserFacingImageError(error);
+    console.error("ThreadLabs OpenAI image generation failed:", error);
+    throw new Error(`Image generation failed through OpenAI. ${error.message}`);
   }
 }
 
@@ -438,6 +365,7 @@ Return a refined final fashion image with the requested change.
 
   return generateWithModel({
     prompt,
+    referenceImage,
     aspectRatio: "4:3",
   });
 }
@@ -508,5 +436,5 @@ Use clean editorial fashion photography.
 /* ------------------------------------------------------- */
 
 export function isHuggingFaceConfigured() {
-  return Boolean(API_TOKEN);
+  return true;
 }

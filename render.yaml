@@ -1,17 +1,9 @@
 services:
   - type: web
     name: threadlabs
-    runtime: static
+    runtime: node
     buildCommand: npm ci && npm run build
-    staticPublishPath: ./build
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
+    startCommand: npm run start:server
     envVars:
-      - key: REACT_APP_HUGGINGFACE_API_TOKEN
+      - key: OPENAI_API_KEY
         sync: false
-      - key: REACT_APP_HUGGINGFACE_IMAGE_MODEL
-        value: stabilityai/stable-diffusion-3-medium-diffusers
-      - key: REACT_APP_HUGGINGFACE_IMAGE_TO_IMAGE_MODEL
-        value: black-forest-labs/FLUX.1-Kontext-dev
