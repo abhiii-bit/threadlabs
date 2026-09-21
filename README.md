@@ -23,6 +23,8 @@ This repository includes a `render.yaml` Blueprint for a Render Node web service
 
 The server handles both text-to-image generation and reference-image editing.
 
+The studio also includes a Tailor Plan worksheet. Users can enter body measurements, choose a garment and fabric, and receive a planning estimate for fabric meters, lining, trims, labor, and total INR cost. The estimate can be copied into a tailor brief or opened in the user's email client. Final consumption and pricing must be confirmed by the tailor after a fit review.
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts

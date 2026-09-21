@@ -129,6 +129,21 @@ function App() {
   const [tryOnError, setTryOnError] =
     useState("");
 
+  const [tailorProfile, setTailorProfile] = useState({
+    garmentType: "Lehenga set",
+    fabric: "Silk",
+    fabricRate: 850,
+    height: 165,
+    chest: 86,
+    waist: 70,
+    hip: 94,
+    shoulder: 38,
+    sleeve: 58,
+    inseam: 76,
+  });
+  const [tailorEmail, setTailorEmail] = useState("");
+  const [briefCopied, setBriefCopied] = useState(false);
+
   const [brushSize, setBrushSize] =
     useState(8);
 
@@ -975,6 +990,105 @@ function App() {
     );
   };
 
+  const tailorEstimate = useMemo(() => {
+    const baseMeters = {
+      "Sari": 5.5,
+      "Lehenga set": 4.5,
+      "Kurta": 2.75,
+      "Co-ord set": 3.5,
+      "Blouse": 1.25,
+    }[tailorProfile.garmentType] || 3;
+    const heightAdjustment = Math.max(
+      -0.25,
+      (tailorProfile.height - 165) * 0.012
+    );
+    const bodyAdjustment = Math.max(
+      0,
+      (tailorProfile.hip - 94) * 0.008
+    );
+    const fabricMeters = Math.max(
+      1.25,
+      baseMeters + heightAdjustment + bodyAdjustment
+    );
+    const liningMeters = ["Sari", "Blouse"].includes(
+      tailorProfile.garmentType
+    ) ? 0.6 : fabricMeters * 0.72;
+    const trims = tailorProfile.garmentType === "Lehenga set"
+      ? 1450
+      : tailorProfile.garmentType === "Sari"
+      ? 650
+      : 900;
+    const labor = {
+      Sari: 2600,
+      "Lehenga set": 7200,
+      Kurta: 3200,
+      "Co-ord set": 4800,
+      Blouse: 2800,
+    }[tailorProfile.garmentType] || 3500;
+    const fabricCost = fabricMeters * Number(tailorProfile.fabricRate || 0);
+    const liningCost = liningMeters * 280;
+    const subtotal = fabricCost + liningCost + trims + labor;
+    const contingency = subtotal * 0.1;
+
+    return {
+      fabricMeters,
+      liningMeters,
+      fabricCost,
+      liningCost,
+      trims,
+      labor,
+      subtotal,
+      contingency,
+      total: subtotal + contingency,
+    };
+  }, [tailorProfile]);
+
+  const tailorBrief = useMemo(() => {
+    const money = (value) => `INR ${Math.round(value).toLocaleString("en-IN")}`;
+    return `THREADLABS TAILOR BRIEF
+
+Design: ${prompt.trim() || "Custom fashion design"}
+Garment: ${tailorProfile.garmentType}
+Fabric: ${tailorProfile.fabric}
+
+BODY MEASUREMENTS (cm)
+Height: ${tailorProfile.height}
+Chest / bust: ${tailorProfile.chest}
+Waist: ${tailorProfile.waist}
+Hip: ${tailorProfile.hip}
+Shoulder: ${tailorProfile.shoulder}
+Sleeve length: ${tailorProfile.sleeve}
+Inseam: ${tailorProfile.inseam}
+
+PLANNING ESTIMATE
+Main fabric: ${tailorEstimate.fabricMeters.toFixed(2)} m
+Lining: ${tailorEstimate.liningMeters.toFixed(2)} m
+Trims / embellishment allowance: ${money(tailorEstimate.trims)}
+Tailoring labor: ${money(tailorEstimate.labor)}
+Estimated total: ${money(tailorEstimate.total)}
+
+Please confirm final consumption, pattern adjustments, fabric width, and quote after measurement and fit review.`;
+  }, [prompt, tailorEstimate, tailorProfile]);
+
+  const updateTailorProfile = (field, value) => {
+    setTailorProfile((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  };
+
+  const copyTailorBrief = async () => {
+    await navigator.clipboard.writeText(tailorBrief);
+    setBriefCopied(true);
+    window.setTimeout(() => setBriefCopied(false), 2200);
+  };
+
+  const emailTailorBrief = () => {
+    const subject = encodeURIComponent("ThreadLabs tailoring brief");
+    const body = encodeURIComponent(tailorBrief);
+    window.location.href = `mailto:${tailorEmail}?subject=${subject}&body=${body}`;
+  };
+
   /* ===================================================== */
   /* Prompt examples                                       */
   /* ===================================================== */
@@ -1038,6 +1152,10 @@ function App() {
 
           <a href="#design-result">
             Designs
+          </a>
+
+          <a href="#tailor">
+            Tailor plan
           </a>
 
           <a href="#tryon">
@@ -1810,6 +1928,167 @@ function App() {
                 </p>
               </div>
             )}
+          </div>
+        </section>
+
+        {/* ================================================= */}
+        {/* TAILOR PLAN                                      */}
+        {/* ================================================= */}
+
+        <section
+          id="tailor"
+          className="tailor-section"
+        >
+          <div
+            className="section-heading"
+            data-reveal
+          >
+            <span>
+              06 — TAILOR PLAN
+            </span>
+
+            <h2>
+              Make it
+              <br />
+              measurable.
+            </h2>
+
+            <p>
+              Add your body ratios and material choice.
+              ThreadLabs turns the concept into a planning
+              brief your tailor can review.
+            </p>
+          </div>
+
+          <div
+            className="tailor-layout"
+            data-reveal
+          >
+            <div className="tailor-form-panel">
+              <div className="panel-top">
+                <span>BODY RATIOS / MATERIAL / MAKE</span>
+                <span>CM / INR</span>
+              </div>
+
+              <div className="tailor-choice-grid">
+                <label>
+                  GARMENT TYPE
+                  <select
+                    value={tailorProfile.garmentType}
+                    onChange={(event) => updateTailorProfile("garmentType", event.target.value)}
+                  >
+                    <option>Sari</option>
+                    <option>Lehenga set</option>
+                    <option>Kurta</option>
+                    <option>Co-ord set</option>
+                    <option>Blouse</option>
+                  </select>
+                </label>
+
+                <label>
+                  FABRIC
+                  <select
+                    value={tailorProfile.fabric}
+                    onChange={(event) => updateTailorProfile("fabric", event.target.value)}
+                  >
+                    <option>Silk</option>
+                    <option>Handloom cotton</option>
+                    <option>Organza</option>
+                    <option>Chanderi</option>
+                    <option>Velvet</option>
+                  </select>
+                </label>
+
+                <label>
+                  FABRIC PRICE / M
+                  <input
+                    type="number"
+                    min="0"
+                    value={tailorProfile.fabricRate}
+                    onChange={(event) => updateTailorProfile("fabricRate", event.target.value)}
+                  />
+                </label>
+
+                <label className="tailor-email-field">
+                  TAILOR EMAIL (OPTIONAL)
+                  <input
+                    type="email"
+                    value={tailorEmail}
+                    placeholder="tailor@example.com"
+                    onChange={(event) => setTailorEmail(event.target.value)}
+                  />
+                </label>
+              </div>
+
+              <div className="measurement-grid">
+                {[
+                  ["height", "HEIGHT"],
+                  ["chest", "CHEST / BUST"],
+                  ["waist", "WAIST"],
+                  ["hip", "HIP"],
+                  ["shoulder", "SHOULDER"],
+                  ["sleeve", "SLEEVE LENGTH"],
+                  ["inseam", "INSEAM"],
+                ].map(([field, label]) => (
+                  <label key={field}>
+                    {label}
+                    <input
+                      type="number"
+                      min="1"
+                      value={tailorProfile[field]}
+                      onChange={(event) => updateTailorProfile(field, event.target.value)}
+                    />
+                    <span>cm</span>
+                  </label>
+                ))}
+              </div>
+
+              <p className="tailor-note">
+                Measure over the clothing you plan to wear underneath.
+                Your tailor should confirm ease, fabric width, and final pattern before cutting.
+              </p>
+            </div>
+
+            <aside className="tailor-estimate-panel">
+              <span className="estimate-kicker">AI-ASSISTED PLANNING ESTIMATE</span>
+              <h3>What this design may need.</h3>
+
+              <div className="estimate-metrics">
+                <div>
+                  <span>MAIN FABRIC</span>
+                  <strong>{tailorEstimate.fabricMeters.toFixed(2)} m</strong>
+                </div>
+                <div>
+                  <span>LINING</span>
+                  <strong>{tailorEstimate.liningMeters.toFixed(2)} m</strong>
+                </div>
+                <div>
+                  <span>EST. TOTAL</span>
+                  <strong>INR {Math.round(tailorEstimate.total).toLocaleString("en-IN")}</strong>
+                </div>
+              </div>
+
+              <div className="estimate-breakdown">
+                <div><span>Fabric</span><strong>INR {Math.round(tailorEstimate.fabricCost).toLocaleString("en-IN")}</strong></div>
+                <div><span>Lining</span><strong>INR {Math.round(tailorEstimate.liningCost).toLocaleString("en-IN")}</strong></div>
+                <div><span>Trims / embellishment</span><strong>INR {tailorEstimate.trims.toLocaleString("en-IN")}</strong></div>
+                <div><span>Tailoring labor</span><strong>INR {tailorEstimate.labor.toLocaleString("en-IN")}</strong></div>
+                <div><span>10% fitting buffer</span><strong>INR {Math.round(tailorEstimate.contingency).toLocaleString("en-IN")}</strong></div>
+              </div>
+
+              <div className="tailor-actions">
+                <button type="button" className="generate-button compact" onClick={copyTailorBrief}>
+                  {briefCopied ? "BRIEF COPIED" : "COPY TAILOR BRIEF"}
+                </button>
+                <button type="button" className="secondary-button" onClick={emailTailorBrief}>
+                  EMAIL TAILOR →
+                </button>
+              </div>
+
+              <p className="estimate-disclaimer">
+                This is a planning estimate, not a final quotation. The tailor confirms consumption and price after a fit review.
+              </p>
+            </aside>
           </div>
         </section>
 
