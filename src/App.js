@@ -4,7 +4,12 @@ import React, {
   useRef,
   useState,
 } from "react";
-import anime from "animejs/lib/anime.es.js";
+import {
+  animate,
+  createTimeline,
+  onScroll,
+  stagger,
+} from "animejs";
 
 import {
   generateDesign,
@@ -22,35 +27,35 @@ import "./App.css";
 
 const inspirationImages = [
   {
-    src: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&w=900&q=85",
+    src: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=900&q=85",
     title: "Sari Drape / सिल्हूट",
   },
   {
-    src: "https://images.unsplash.com/photo-1539109136881-3be0616acf4b?auto=format&fit=crop&w=900&q=85",
+    src: "https://images.unsplash.com/photo-1583391733956-6c78276477e2?auto=format&fit=crop&w=900&q=85",
     title: "Zari Evening / ज़री",
   },
   {
-    src: "https://images.unsplash.com/photo-1485968579580-b6d095142e6e?auto=format&fit=crop&w=900&q=85",
+    src: "https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&w=900&q=85",
     title: "Lotus Geometry / कमल",
   },
   {
-    src: "https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?auto=format&fit=crop&w=900&q=85",
+    src: "https://images.unsplash.com/photo-1606800052052-a08af7148866?auto=format&fit=crop&w=900&q=85",
     title: "Kalamkari Texture",
   },
   {
-    src: "https://images.unsplash.com/photo-1544441893-675973e31985?auto=format&fit=crop&w=900&q=85",
+    src: "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?auto=format&fit=crop&w=900&q=85",
     title: "Banarasi Surface",
   },
   {
-    src: "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=900&q=85",
+    src: "https://images.unsplash.com/photo-1610030469983-98e550d6193c?auto=format&fit=crop&w=900&q=85",
     title: "Temple Border",
   },
   {
-    src: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=85",
+    src: "https://images.unsplash.com/photo-1609357605129-26f69add5d6e?auto=format&fit=crop&w=900&q=85",
     title: "Indigo Block Print",
   },
   {
-    src: "https://images.unsplash.com/photo-1525507119028-ed4c629a60a3?auto=format&fit=crop&w=900&q=85",
+    src: "https://images.unsplash.com/photo-1621786030484-4c855eed6974?auto=format&fit=crop&w=900&q=85",
     title: "Handloom Direction",
   },
 ];
@@ -237,33 +242,12 @@ function App() {
   /* ===================================================== */
 
   useEffect(() => {
-    const elements =
-      document.querySelectorAll(
-        "[data-reveal]"
-      );
-
-    if (!elements.length) {
-      return undefined;
-    }
-
-    const directionRef = {
-      current: "down",
-    };
-    let lastScrollY = window.scrollY;
     let frameId = null;
 
     const updateScrollState = () => {
       frameId = null;
 
       const currentScrollY = window.scrollY;
-      const direction =
-        currentScrollY >= lastScrollY
-          ? "down"
-          : "up";
-
-      directionRef.current = direction;
-      lastScrollY = currentScrollY;
-
       const documentHeight =
         document.documentElement.scrollHeight -
         window.innerHeight;
@@ -271,8 +255,6 @@ function App() {
         ? currentScrollY / documentHeight
         : 0;
 
-      document.documentElement.dataset.scrollDirection =
-        direction;
       document.documentElement.style.setProperty(
         "--scroll-progress",
         `${Math.min(Math.max(progress, 0), 1)}`
@@ -287,43 +269,6 @@ function App() {
       }
     };
 
-    const observer =
-      new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.dataset.revealDirection =
-                directionRef.current;
-
-              entry.target.classList.remove(
-                "is-visible"
-              );
-
-              window.requestAnimationFrame(() => {
-                entry.target.classList.add(
-                  "is-visible"
-                );
-              });
-            } else {
-              entry.target.classList.add(
-                "is-outside"
-              );
-
-              entry.target.classList.remove(
-                "is-visible"
-              );
-            }
-          });
-        },
-        {
-          threshold: 0.14,
-        }
-      );
-
-    elements.forEach((element) =>
-      observer.observe(element)
-    );
-
     window.addEventListener(
       "scroll",
       handleScroll,
@@ -333,7 +278,6 @@ function App() {
     updateScrollState();
 
     return () => {
-      observer.disconnect();
       window.removeEventListener(
         "scroll",
         handleScroll
@@ -343,8 +287,6 @@ function App() {
         window.cancelAnimationFrame(frameId);
       }
 
-      delete document.documentElement.dataset
-        .scrollDirection;
       document.documentElement.style.removeProperty(
         "--scroll-progress"
       );
@@ -367,89 +309,44 @@ function App() {
     const revealElements = document.querySelectorAll(
       "[data-reveal]:not(.hero-copy):not(.hero-side):not(.hero-gallery)"
     );
-    const heroGallery = document.querySelector(".hero-gallery");
 
-    const introTimeline = anime.timeline({
-      easing: "easeOutExpo",
-      autoplay: true,
+    const introTimeline = createTimeline({
+      defaults: {
+        ease: "outExpo",
+      },
     });
 
     introTimeline
-      .add({
-        targets: navigation,
+      .add(navigation, {
         opacity: [0, 1],
-        translateY: [-18, 0],
+        y: [-18, 0],
         duration: 900,
-      })
-      .add({
-        targets: heroElements,
+      }, 0)
+      .add(heroElements, {
         opacity: [0, 1],
-        translateY: [34, 0],
+        y: [34, 0],
         scale: [0.985, 1],
-        delay: anime.stagger(110),
+        delay: stagger(110),
         duration: 1100,
-      }, "-=560");
+      }, "<");
 
-    const revealObserver = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) {
-            return;
-          }
-
-          anime({
-            targets: entry.target,
-            opacity: [0, 1],
-            translateY: [42, 0],
-            scale: [0.985, 1],
-            duration: 900,
-            easing: "easeOutExpo",
-          });
-
-          revealObserver.unobserve(entry.target);
-        });
-      },
-      { threshold: 0.16 }
-    );
-
-    revealElements.forEach((element) => revealObserver.observe(element));
-
-    const handlePointerMove = (event) => {
-      if (!heroGallery || window.innerWidth < 800) {
-        return;
-      }
-
-      const x = event.clientX / window.innerWidth - 0.5;
-      const y = event.clientY / window.innerHeight - 0.5;
-
-      anime({
-        targets: heroGallery,
-        translateX: x * 10,
-        translateY: y * 8,
+    const revealAnimations = Array.from(revealElements).map((element) =>
+      animate(element, {
+        opacity: [0, 1],
+        y: [42, 0],
+        scale: [0.985, 1],
         duration: 900,
-        easing: "easeOutQuad",
-      });
-    };
-
-    const resetGallery = () => {
-      anime({
-        targets: heroGallery,
-        translateX: 0,
-        translateY: 0,
-        duration: 700,
-        easing: "easeOutExpo",
-      });
-    };
-
-    window.addEventListener("mousemove", handlePointerMove, { passive: true });
-    window.addEventListener("blur", resetGallery);
+        ease: "outExpo",
+        autoplay: onScroll({
+          target: element,
+          repeat: false,
+        }),
+      })
+    );
 
     return () => {
       introTimeline.pause();
-      revealObserver.disconnect();
-      anime.remove([navigation, ...heroElements, ...revealElements]);
-      window.removeEventListener("mousemove", handlePointerMove);
-      window.removeEventListener("blur", resetGallery);
+      revealAnimations.forEach((animation) => animation.revert());
     };
   }, []);
 
@@ -956,7 +853,7 @@ function App() {
 
       try {
         /*
-          Small visual progress sequence while Hugging Face is working.
+          Small visual progress sequence while OpenAI is working.
           The actual API call remains the source of truth.
         */
         progressTimer =
@@ -1835,7 +1732,7 @@ function App() {
 
             <p>
               This is the actual image generated
-              by Hugging Face — not a text description,
+              by OpenAI — not a text description,
               not JSON and not a placeholder.
             </p>
           </div>

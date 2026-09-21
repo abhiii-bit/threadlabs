@@ -105,4 +105,5 @@ app.use((request, response) => {
 
 app.listen(port, () => {
   console.log(`ThreadLabs server listening on port ${port}`);
+  console.log(`OpenAI API key configured: ${Boolean(openAIKey)}`);
 });
