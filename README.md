@@ -4,7 +4,7 @@
 
 ThreadLabs uses open-weight image models through the Hugging Face Inference API.
 
-Create a `.env` file in the project root and add:
+Create a `.env` file in the project root for local development and add:
 
 ```env
 REACT_APP_HUGGINGFACE_API_TOKEN=hf_your_token_here
@@ -13,6 +13,17 @@ REACT_APP_HUGGINGFACE_IMAGE_TO_IMAGE_MODEL=black-forest-labs/FLUX.1-Kontext-dev
 ```
 
 Restart `npm start` after changing environment variables. The token is used by the browser in this demo, so use a restricted token and proxy the request through a server before deploying publicly.
+
+## Deploy to Render
+
+This repository includes a `render.yaml` Blueprint for a Render Static Site.
+
+1. Push the repository to GitHub.
+2. In Render, choose **New > Blueprint** and select the repository.
+3. Set `REACT_APP_HUGGINGFACE_API_TOKEN` in the Render environment variables.
+4. Deploy. Render will run `npm ci && npm run build` and publish the `build` directory.
+
+The image model variables are already configured in `render.yaml` and can be overridden in Render if needed. Because the Hugging Face token is exposed to the browser by this frontend build, use a restricted token and consider adding a server-side proxy before a public launch.
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 

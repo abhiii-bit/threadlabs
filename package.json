@@ -2,7 +2,6 @@
   "name": "threadlabs",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://abhiii-bit.github.io/threadlabs",
   "dependencies": {
     "@huggingface/inference": "^4.13.28",
     "@testing-library/dom": "^10.4.1",
