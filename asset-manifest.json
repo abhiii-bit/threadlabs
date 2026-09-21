@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/threadlabs/static/css/main.f15547a6.css",
+    "main.js": "/threadlabs/static/js/main.e83be2b5.js",
+    "static/js/453.35f77509.chunk.js": "/threadlabs/static/js/453.35f77509.chunk.js",
+    "index.html": "/threadlabs/index.html",
+    "main.f15547a6.css.map": "/threadlabs/static/css/main.f15547a6.css.map",
+    "main.e83be2b5.js.map": "/threadlabs/static/js/main.e83be2b5.js.map",
+    "453.35f77509.chunk.js.map": "/threadlabs/static/js/453.35f77509.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.f15547a6.css",
+    "static/js/main.e83be2b5.js"
+  ]
+}
