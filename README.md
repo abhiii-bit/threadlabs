@@ -1,5 +1,19 @@
 # Getting Started with Create React App
 
+## Hugging Face image generation
+
+ThreadLabs uses open-weight image models through the Hugging Face Inference API.
+
+Create a `.env` file in the project root and add:
+
+```env
+REACT_APP_HUGGINGFACE_API_TOKEN=hf_your_token_here
+REACT_APP_HUGGINGFACE_IMAGE_MODEL=stabilityai/stable-diffusion-3-medium-diffusers
+REACT_APP_HUGGINGFACE_IMAGE_TO_IMAGE_MODEL=black-forest-labs/FLUX.1-Kontext-dev
+```
+
+Restart `npm start` after changing environment variables. The token is used by the browser in this demo, so use a restricted token and proxy the request through a server before deploying publicly.
+
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
