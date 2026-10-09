@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 
 const suggestionOptions = [
   "Add a detachable statement sleeve",
@@ -18,6 +18,20 @@ function DesignResultPage({
 }) {
   const [suggestion, setSuggestion] = useState("");
   const [selectedSuggestions, setSelectedSuggestions] = useState([]);
+  const [bodyProportions, setBodyProportions] = useState({
+    height: "",
+    chest: "",
+    waist: "",
+    hips: "",
+    shoulder: "",
+  });
+  const [showFinalImage, setShowFinalImage] = useState(false);
+
+  useEffect(() => {
+    if (isGenerating || !generatedImage) {
+      setShowFinalImage(false);
+    }
+  }, [generatedImage, isGenerating]);
 
   const progress = isGenerating
     ? Math.min(generationStep * 25, 95)
@@ -52,6 +66,26 @@ function DesignResultPage({
     setSuggestion("");
   };
 
+  const updateProportion = (event) => {
+    const { name, value } = event.target;
+    setBodyProportions((current) => ({ ...current, [name]: value }));
+  };
+
+  const submitProportions = (event) => {
+    event.preventDefault();
+    setShowFinalImage(true);
+  };
+
+  const proportionFields = [
+    { name: "height", label: "HEIGHT", unit: "cm" },
+    { name: "chest", label: "BUST / CHEST", unit: "cm" },
+    { name: "waist", label: "WAIST", unit: "cm" },
+    { name: "hips", label: "HIPS", unit: "cm" },
+    { name: "shoulder", label: "SHOULDER WIDTH", unit: "cm" },
+  ];
+
+  const showProportionsForm = Boolean(generatedImage) && !isGenerating && !showFinalImage;
+
   return (
     <main className="result-page">
       <header className="result-page-header">
@@ -75,10 +109,59 @@ function DesignResultPage({
           <span>IMAGE GENERATION</span>
           <strong>{progress}%</strong>
           <div className="result-progress-track"><div style={{ width: `${progress}%` }} /></div>
-          <small>{isGenerating ? "Rendering garment, material and detail views..." : generatedImage ? "Fashion board rendered and ready for refinement." : generationError ? "Generation stopped. Check the error below." : "Waiting for the first render."}</small>
+          <small>{isGenerating ? "Rendering garment, material and detail views..." : showProportionsForm ? "Image rendered. Enter your body proportions to reveal the final design." : generatedImage ? "Fashion board rendered and ready for refinement." : generationError ? "Generation stopped. Check the error below." : "Waiting for the first render."}</small>
         </div>
       </section>
 
+      {showProportionsForm && (
+        <section className="proportions-section" aria-labelledby="proportions-title">
+          <div className="proportions-intro">
+            <span className="result-kicker">FIT PROFILE / CM</span>
+            <h2 id="proportions-title">A considered fit<br />starts with you.</h2>
+            <p>Enter your body measurements before revealing the finished design. These proportions help ThreadLabs frame the garment for your fit.</p>
+          </div>
+          <form className="proportions-form" onSubmit={submitProportions}>
+            <div className="proportions-fields">
+              {proportionFields.map(({ name, label, unit }) => (
+                <label className="proportion-field" key={name}>
+                  <span>{label}</span>
+                  <div className="proportion-input-wrap">
+                    <input
+                      type="number"
+                      name={name}
+                      value={bodyProportions[name]}
+                      onChange={updateProportion}
+                      min="1"
+                      max="300"
+                      step="0.1"
+                      required
+                      inputMode="decimal"
+                      aria-label={`${label} in ${unit}`}
+                    />
+                    <small>{unit}</small>
+                  </div>
+                </label>
+              ))}
+            </div>
+            <p className="proportions-note">Measurements stay in this session and appear with your design as fit context.</p>
+            <button type="submit" className="result-primary-button">
+              REVEAL MY FINAL DESIGN <span aria-hidden="true">-&gt;</span>
+            </button>
+          </form>
+        </section>
+      )}
+
+      {showFinalImage && (
+        <div className="proportions-confirmation">
+          <div>
+            <span>FIT PROFILE ADDED</span>
+            <p>{proportionFields.map(({ name, label }) => `${label}: ${bodyProportions[name]} cm`).join("  ·  ")}</p>
+          </div>
+          <button type="button" onClick={() => setShowFinalImage(false)}>EDIT MEASUREMENTS</button>
+        </div>
+      )}
+
+      {!showProportionsForm && (
       <section className="result-page-grid">
         <div className="result-image-panel">
           {isGenerating ? (
@@ -128,8 +211,9 @@ function DesignResultPage({
           </button>
         </aside>
       </section>
+      )}
 
-      <section className="result-estimates">
+      {showFinalImage && <section className="result-estimates">
         <div className="estimate-intro">
           <span>PROJECT OUTLOOK</span>
           <h2>From image to<br />something real.</h2>
@@ -145,7 +229,7 @@ function DesignResultPage({
           <strong>{estimate.delivery}</strong>
           <small>Material sourcing begins after design approval.</small>
         </div>
-      </section>
+      </section>}
     </main>
   );
 }
